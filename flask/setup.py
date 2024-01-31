@@ -35,7 +35,7 @@ def import_data():
             session.bulk_insert_mappings(Employee, employees_data)
 
             # Bulk insert attendance
-            session.bulk_insert_mappings(Attendance, attendance_data)
+            # session.bulk_insert_mappings(Attendance, attendance_data)
 
             session.commit()
             print("Data imported successfully.")
