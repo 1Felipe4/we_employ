@@ -14,7 +14,7 @@ class Employee(db.Model):
     work_id_number = db.Column(db.String(36), unique=True)
     email_address = db.Column(db.String(255))
     country = db.Column(db.String(255))
-    phone_number = db.Column(db.String(20))
+    phone_number = db.Column(db.String(255))
 
 # The `Attendance` class represents a table in a database that stores attendance records for
 # employees, including the date, clock-in time, clock-out time, and the employee's record ID.
