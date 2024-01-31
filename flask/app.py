@@ -7,12 +7,17 @@ from datetime import datetime
 from flask_cors import CORS  # Import the CORS extension
 import os
 from dotenv import load_dotenv
+from flask import Flask, request, render_template, redirect, url_for
+
+project_root = os.path.dirname(os.path.realpath('__file__'))
+template_path = os.path.join(project_root, 'app/templates')
+static_path = os.path.join(project_root, 'app/static')
 
 # Load environment variables from the .env file
 load_dotenv()
 
 # This code is setting up the Flask application and configuring the database connection.
-app = Flask(__name__)
+app = Flask(__name__, template_folder=template_path, static_folder=static_path)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') or 'sqlite:///we_employ.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
@@ -74,3 +79,6 @@ def serve_static(filename):
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+application = app
