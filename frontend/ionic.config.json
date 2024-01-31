@@ -1,0 +1,7 @@
+{
+  "name": "we_employ",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue-vite"
+}
