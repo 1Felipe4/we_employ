@@ -24,8 +24,8 @@ def import_data():
     with open('data/employees.json', 'r') as file:
         employees_data = json.load(file)
 
-    # with open('data/attendance.json', 'r') as file:
-    #     attendance_data = json.load(file)
+    with open('data/attendance.json', 'r') as file:
+        attendance_data = json.load(file)
     
     with app.app_context():
         Session = sessionmaker(bind=db.engine)
@@ -35,7 +35,7 @@ def import_data():
             session.bulk_insert_mappings(Employee, employees_data)
 
             # Bulk insert attendance
-            # session.bulk_insert_mappings(Attendance, attendance_data)
+            session.bulk_insert_mappings(Attendance, attendance_data)
 
             session.commit()
             print("Data imported successfully.")
