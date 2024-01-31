@@ -24,8 +24,8 @@ def import_data():
     with open('data/employees.json', 'r') as file:
         employees_data = json.load(file)
 
-    with open('data/attendance.json', 'r') as file:
-        attendance_data = json.load(file)
+    # with open('data/attendance.json', 'r') as file:
+    #     attendance_data = json.load(file)
     
     with app.app_context():
         Session = sessionmaker(bind=db.engine)
