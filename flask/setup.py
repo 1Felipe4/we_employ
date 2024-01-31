@@ -23,10 +23,10 @@ def import_data():
     # Please put json data in following path to load
     with open('data/employees.json', 'r') as file:
         employees_data = json.load(file)
-
+    print('loaded employees')
     with open('data/attendance.json', 'r') as file:
         attendance_data = json.load(file)
-    
+    print('loaded attendance')
     with app.app_context():
         Session = sessionmaker(bind=db.engine)
         session = Session()
