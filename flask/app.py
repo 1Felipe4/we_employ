@@ -1,7 +1,7 @@
 # app.py
 from concurrent.futures import ThreadPoolExecutor
 from flask import Flask, jsonify, request, send_from_directory
-from helpers import check_employee_attendance, filter_bad_weather_days, get_attendance_info, get_events_data, get_exact_weeks_in_year, get_weather_data, get_workdays_and_events
+from helpers import check_employee_attendance, filter_bad_weather_days, get_attendance_info, get_events_data, get_weather_data, get_workdays_and_events
 from models import db, Employee, Attendance
 from datetime import datetime
 from flask_cors import CORS  # Import the CORS extension
