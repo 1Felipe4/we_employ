@@ -1,14 +1,14 @@
 from models import db, Employee, Attendance
 from datetime import datetime, timedelta
 import requests
-from sqlalchemy import  func, or_
+from sqlalchemy import func, or_
 
 
 def get_events_data(year, country):
     """
     The function `get_events_data` fetches events data from a specified year and country using a
     provided URL format.
-    
+
     :param year: The year parameter is used to specify the year for which you want to fetch events data.
     It is an integer value representing the year
     :param country: The country parameter is used to specify the country for which you want to fetch
@@ -20,11 +20,12 @@ def get_events_data(year, country):
     events_data = requests.get(events_api_url).json()
     return events_data
 
+
 def get_weather_data(year, country):
     """
     The function `get_weather_data` fetches weather data for a specific year and country using a
     provided URL format.
-    
+
     :param year: The year parameter is used to specify the year for which you want to fetch the weather
     data. It is an integer value representing the year (e.g., 2021)
     :param country: The country parameter is used to specify the country for which you want to fetch
@@ -36,12 +37,13 @@ def get_weather_data(year, country):
     weather_data = requests.get(weather_api_url).json()
     return weather_data
 
+
 def get_workdays_and_events(events):
     """
     The function `get_workdays_and_events` takes a list of events and returns a dictionary where the
     keys are workdays (the day before, the day of, and the day after each event) and the values are the
     corresponding events.
-    
+
     :param events: The parameter "events" is expected to be a list of dictionaries, where each
     dictionary represents an event. Each event dictionary should have a key "event_date" with a value
     representing the date of the event in the format "YYYY-MM-DD"
@@ -69,11 +71,12 @@ def get_workdays_and_events(events):
 
     return workdays_and_events
 
+
 def filter_bad_weather_days(weather_data):
     """
     The function filters out bad weather days from a given weather data based on extreme weather
     conditions and high maximum temperature.
-    
+
     :param weather_data: The `weather_data` parameter is a list of dictionaries, where each dictionary
     represents a day's weather information. Each dictionary has the following keys:
     :return: a set of dates that correspond to bad weather days.
@@ -90,11 +93,12 @@ def filter_bad_weather_days(weather_data):
 
     return bad_weather_days
 
-def check_employee_attendance(country, filtered_workdays):    
+
+def check_employee_attendance(country, filtered_workdays):
     """
     The function `check_employee_attendance` returns a list of employee record IDs who have had more
     than 3 late arrivals or early departures on filtered workdays in a specific country.
-    
+
     :param country: The "country" parameter is used to filter employees based on their country of
     origin. It is a string that represents the country name
     :param filtered_workdays: The `filtered_workdays` parameter is a list of specific workdays that you
@@ -111,7 +115,9 @@ def check_employee_attendance(country, filtered_workdays):
             Attendance.date.in_(filtered_workdays),
             or_(
                 Attendance.clock_in > '08:15:00',
-                Attendance.clock_out < '16:00:00'
+                Attendance.clock_in == '',
+                Attendance.clock_out < '16:00:00',
+                Attendance.clock_out == ''
             )
         )
         .group_by(Employee.record_id)
@@ -123,11 +129,12 @@ def check_employee_attendance(country, filtered_workdays):
                                         for employee_data in employees_with_late_arrivals]
     return employees_with_late_arrivals_ids
 
+
 def get_late_attendance_dates(employee_ids, filtered_workdays):
     """
     The function `get_late_attendance_dates` retrieves the dates of late attendance for multiple
     employees based on their employee IDs and a list of filtered workdays.
-    
+
     :param employee_ids: A list of employee IDs for which we want to retrieve late attendance dates
     :param filtered_workdays: The `filtered_workdays` parameter is a list of dates that have been
     filtered based on certain criteria. These dates represent the workdays for which we want to retrieve
@@ -143,7 +150,9 @@ def get_late_attendance_dates(employee_ids, filtered_workdays):
             Attendance.date.in_(filtered_workdays),
             or_(
                 Attendance.clock_in > '08:15:00',
-                Attendance.clock_out < '16:00:00'
+                Attendance.clock_in == '',
+                Attendance.clock_out < '16:00:00',
+                Attendance.clock_out == ''
             )
         )
         .all()
@@ -158,11 +167,12 @@ def get_late_attendance_dates(employee_ids, filtered_workdays):
 
     return late_dates_by_employee
 
-def get_attendance_info(employee_ids, year, filtered_workdays, workdays_and_events):
+
+def get_attendance_info(employee_ids, year, filtered_workdays, workdays_and_events, weeks_in_year=52):
     """
     The function `get_attendance_info` retrieves attendance information for a list of employees in a
     given year, including average hours per week and late attendance dates.
-    
+
     :param employee_ids: A list of employee IDs for which attendance information is to be retrieved
     :param year: The year parameter is the year for which you want to retrieve attendance information
     :param filtered_workdays: The `filtered_workdays` parameter is a list of dates that have been
@@ -185,7 +195,9 @@ def get_attendance_info(employee_ids, year, filtered_workdays, workdays_and_even
         .filter(func.substr(Attendance.date, 1, 4) == str(year))
         .filter(or_(
                 Attendance.clock_in > '08:15:00',
-                Attendance.clock_out < '16:00:00'
+                Attendance.clock_in == '',
+                Attendance.clock_out < '16:00:00',
+                Attendance.clock_out == ''
                 ))
         .filter(Attendance.date.in_(filtered_workdays))
         .group_by(Attendance.employee_record_id)
@@ -200,10 +212,16 @@ def get_attendance_info(employee_ids, year, filtered_workdays, workdays_and_even
             Employee.email_address,
             Employee.country,
             Employee.phone_number,
-            func.sum(func.cast(func.extract('epoch', Attendance.clock_out) - func.extract(
-                'epoch', Attendance.clock_in), db.Float) / 3600).label('total_hours'),
-            func.sum(func.cast(func.extract('epoch', Attendance.clock_out) - func.extract('epoch',
-                     Attendance.clock_in), db.Float) / 3600 / 52).label('average_hours_per_week'),
+            func.sum(func.cast(
+                (func.unix_timestamp(func.str_to_date(Attendance.clock_out, '%H:%i:%s')) -
+                 func.unix_timestamp(func.str_to_date(Attendance.clock_in, '%H:%i:%s'))),
+                db.Float
+            ) / 3600).label('total_hours'),
+            func.sum(func.cast(
+                (func.unix_timestamp(func.str_to_date(Attendance.clock_out, '%H:%i:%s')) -
+                 func.unix_timestamp(func.str_to_date(Attendance.clock_in, '%H:%i:%s'))),
+                db.Float
+            ) / 3600 / weeks_in_year).label('average_hours_per_week'),
             late_dates_subquery.c.late_attendance_dates
         )
         .join(late_dates_subquery, Employee.record_id == late_dates_subquery.c.employee_record_id, isouter=True)
@@ -218,13 +236,18 @@ def get_attendance_info(employee_ids, year, filtered_workdays, workdays_and_even
 
     ]
 
+    event_dates = {}
+    for date, event in workdays_and_events.items():
+        data = event_dates.get(event['id'], {'event': event, 'dates': []})
+        data['dates'].append(date)
+
     for employee_data in query_result:
         employee_data.late_attendance_dates
         events = {}
         late_dates = employee_data.late_attendance_dates.split(',')
         for date in late_dates:
             if date in workdays_and_events:
-                event=workdays_and_events[date]
+                event = workdays_and_events[date]
                 events[event['id']] = event
 
         data = {
