@@ -32,39 +32,44 @@ def solution():
     :return: a JSON response containing information about problematic employees.
     """
     # Get query parameters
-    year = request.args.get('year', default=2023, type=int)
-    countries = request.args.get('countries', default='all')
-    problematic_employees = []
+    try:
+        year = request.args.get('year', default=2023, type=int)
+        countries = request.args.get('countries', default='all')
+        problematic_employees = []
 
-    # If countries parameter is 'all', get a list of all countries from the database
-    if countries.lower() == 'all':
-        all_countries = [country[0] for country in db.session.query(
-            Employee.country).distinct().all()]
-        print(all_countries)
-    else:
-        all_countries = countries.split(',')
+        # If countries parameter is 'all', get a list of all countries from the database
+        if countries.lower() == 'all':
+            all_countries = [country[0] for country in db.session.query(
+                Employee.country).distinct().all()]
+            print(all_countries)
+        else:
+            all_countries = countries.split(',')
 
-    # Function to process a single country
-    def process_country(country):
-        with app.app_context():
-            event_data = get_events_data(year, country)
-            weather_data = get_weather_data(year, country)
-            workdays_and_events = get_workdays_and_events(event_data)
-            workdays_around_events = set(workdays_and_events.keys())
-            bad_weather_days = filter_bad_weather_days(weather_data)
-            filtered_workdays = workdays_around_events - bad_weather_days
-            problematic_employee_ids = check_employee_attendance(country, filtered_workdays)
-            return get_attendance_info(problematic_employee_ids, year, filtered_workdays, workdays_and_events)
+        # Function to process a single country
+        def process_country(country):
+            with app.app_context():
+                event_data = get_events_data(year, country)
+                weather_data = get_weather_data(year, country)
+                workdays_and_events = get_workdays_and_events(event_data)
+                workdays_around_events = set(workdays_and_events.keys())
+                bad_weather_days = filter_bad_weather_days(weather_data)
+                filtered_workdays = workdays_around_events - bad_weather_days
+                problematic_employee_ids = check_employee_attendance(country, filtered_workdays)
+                return get_attendance_info(problematic_employee_ids, year, filtered_workdays, workdays_and_events)
 
-    # Use ThreadPoolExecutor to process countries concurrently
-    with ThreadPoolExecutor() as executor:
-        results = list(executor.map(process_country, all_countries))
-    print(problematic_employees)
-    # Flatten the list of lists into a single list
-    for result in results:
-        problematic_employees+=result
+        # Use ThreadPoolExecutor to process countries concurrently
+        with ThreadPoolExecutor() as executor:
+            results = list(executor.map(process_country, all_countries))
+        print(problematic_employees)
+        # Flatten the list of lists into a single list
+        for result in results:
+            problematic_employees+=result
 
-    return jsonify(problematic_employees)
+        return jsonify(problematic_employees)
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
+
 
 
 # Catch-all route to serve index.html

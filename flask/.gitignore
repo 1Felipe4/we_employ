@@ -1,5 +1,5 @@
 venv
-*.json
+data
 instance
 .env
 __pycache__
