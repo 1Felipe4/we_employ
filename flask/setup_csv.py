@@ -29,6 +29,6 @@ def import_csv_to_db(csv_filename, model_class):
 
 if __name__ == '__main__':
     recreate_db()
-    import_csv_to_db('data/employee.csv', Employee)
+    import_csv_to_db('data/employees.csv', Employee)
     # Usage example for importing Attendance data
     import_csv_to_db('data/attendance.csv', Attendance)
