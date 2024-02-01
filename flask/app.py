@@ -53,8 +53,8 @@ def solution():
                 workdays_around_events = set(workdays_and_events.keys())
                 bad_weather_days = filter_bad_weather_days(weather_data)
                 filtered_workdays = workdays_around_events - bad_weather_days
-                problematic_employee_ids = check_employee_attendance(country, filtered_workdays)
-                return get_attendance_info(problematic_employee_ids, year, filtered_workdays, workdays_and_events)
+                # problematic_employee_ids = check_employee_attendance(country, filtered_workdays)
+                return get_attendance_info(country, year, filtered_workdays, workdays_and_events)
 
         # Use ThreadPoolExecutor to process countries concurrently
         with ThreadPoolExecutor() as executor:
