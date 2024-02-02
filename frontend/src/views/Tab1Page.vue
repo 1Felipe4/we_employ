@@ -14,13 +14,13 @@
       <ion-progress-bar type="indeterminate" v-if="!meta.loaded"></ion-progress-bar>
       <ion-grid>
         <ion-row>
-          <ion-col size-md="4">
+          <ion-col size-md="4" size="12">
             <ion-item>
               <ion-input label="Year" labelPlacement="stacked" type="number" @ionChange="search()" v-model="year"
                 :disabled="!meta.loaded" :debounce="2000"></ion-input>
             </ion-item>
           </ion-col>
-          <ion-col size-md="8">
+          <ion-col size-md="8" size="12">
             <ion-item>
               <ion-select @ionChange="search()" label="Country" labelPlacement="stacked" placeholder="Make a Selection"
                 interface="popover" :multiple="true" v-model="selected_countries" :disabled="!meta.loaded">
