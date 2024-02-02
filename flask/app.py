@@ -40,13 +40,14 @@ def solution():
         if countries.lower() == 'all':
             all_countries = [country[0] for country in db.session.query(
                 Employee.country).distinct().all()]
-            print(all_countries)
+            
         else:
             all_countries = countries.split(',')
 
         # Function to process a single country
         def process_country(country):
             with app.app_context():
+                print(f'{country} started')
                 event_data = get_events_data(year, country)
                 weather_data = get_weather_data(year, country)
                 workdays_and_events = get_workdays_and_events(event_data)
@@ -58,7 +59,6 @@ def solution():
         # Use ThreadPoolExecutor to process countries concurrently
         with ThreadPoolExecutor() as executor:
             results = list(executor.map(process_country, all_countries))
-        print(problematic_employees)
         # Flatten the list of lists into a single list
         for result in results:
             problematic_employees+=result

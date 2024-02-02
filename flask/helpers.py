@@ -186,7 +186,7 @@ def get_attendance_info(country, year, filtered_workdays, workdays_and_events, w
         .yield_per(500)
 
     )
-
+    print(f'{country} processing')
     for employee_data in query_result:
         events = {}
         late_dates = employee_data.late_attendance_dates.split(',')

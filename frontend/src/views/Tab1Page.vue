@@ -26,15 +26,50 @@
                 interface="popover" :multiple="true" v-model="selected_countries" :disabled="!meta.loaded">
                 <ion-select-option v-for="(country, index) in countries" :key="index">{{ country }}</ion-select-option>
               </ion-select>
-              <ion-chip slot="end" color="success"  v-if="meta.loaded">
+              <ion-chip slot="end" color="success" v-if="meta.loaded">
                 {{ solutionData.length }}
               </ion-chip>
             </ion-item>
           </ion-col>
         </ion-row>
       </ion-grid>
-      <b-table striped hover :items="solutionData"></b-table>
 
+      <ion-accordion-group :multiple="true" :value="selected_employees">
+        <ion-accordion v-for="(item, index) in solutionData" :value="item.id" :key="index">
+          <ion-item slot="header">
+            <ion-label>{{item.name}}</ion-label>
+          </ion-item>
+          <ion-card slot="content">
+            <ion-card-header>
+              <ion-card-subtitle>{{ item.email_address }} | {{ item.phone_number }}</ion-card-subtitle>
+              <ion-note>{{ item.work_id_number }}</ion-note>
+
+            </ion-card-header>
+            <ion-card-content>
+              <ion-list>
+                <ion-item>
+                  <ion-label>Country</ion-label>
+                  <ion-note slot="end">{{ item.country }}</ion-note>
+                </ion-item>
+                <ion-item>
+                  <ion-label>ID</ion-label>
+                  <ion-badge slot="end">#{{ item.record_id }}</ion-badge>
+                </ion-item>
+                <ion-item>
+                  <ion-label>Average Hours Per Week</ion-label>
+                  <ion-note slot="end">{{ item.average_hours_per_week }}</ion-note>
+                </ion-item>
+                <ion-item>
+                  <ion-label>Events</ion-label>
+                  <ion-note slot="end">
+                    <ion-chip v-for="event in item.events">{{ event.event_name }}</ion-chip>
+                  </ion-note>
+                </ion-item>
+              </ion-list>
+            </ion-card-content>
+          </ion-card>
+        </ion-accordion>
+      </ion-accordion-group>
       <!-- <ion-grid>
         <ion-row>
           <ion-col size="12" size-md="6" v-for="(item, index) in solutionData" :key="index">
@@ -116,7 +151,7 @@ import { useSolutionData } from '@/composables/useSolutionData'
 import { ref } from 'vue';
 const { solutionData, meta, getSolutionData } = useSolutionData()
 const isModalOpen: any = ref(false);
-
+const selected_employees = ref([])
 const downloadJsonFile = (data: any, filename: any) => {
   const jsonContent = JSON.stringify(data, null, 2);
   const blob = new Blob([jsonContent], { type: 'application/json' });
