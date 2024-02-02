@@ -93,66 +93,20 @@ def filter_bad_weather_days(weather_data):
 
     return bad_weather_days
 
-
-def check_employee_attendance(country, filtered_workdays):
-    """
-    The function `check_employee_attendance` returns a list of employee record IDs who have had more
-    than 3 late arrivals or early departures on filtered workdays in a specific country.
-
-    :param country: The "country" parameter is used to filter employees based on their country of
-    origin. It is a string that represents the country name
-    :param filtered_workdays: The `filtered_workdays` parameter is a list of specific workdays that you
-    want to filter the attendance records for. It could be a list of dates or any other format that
-    represents the workdays you want to consider
-    :return: a list of employee record IDs for employees who have had more than 3 late arrivals or early
-    departures on the specified filtered workdays in the specified country.
-    """
-    employees_with_late_arrivals = (
-        db.session.query(Employee.record_id, func.count().label('late_count'))
-        .join(Attendance, Employee.record_id == Attendance.employee_record_id)
-        .filter(
-            Employee.country == country,
-            Attendance.date.in_(filtered_workdays),
-            or_(
-                Attendance.clock_in > '08:15:00',
-                Attendance.clock_in == '',
-                Attendance.clock_out < '16:00:00',
-                Attendance.clock_out == ''
-            )
-        )
-        .group_by(Employee.record_id)
-        .having(func.count() > 3)
-        .all()
-    )
-    # Extract employee ids from the result
-    employees_with_late_arrivals_ids = [employee_data[0]
-                                        for employee_data in employees_with_late_arrivals]
-    return employees_with_late_arrivals_ids
-
-
-def get_total_records(country, year, late_arrivals_subquery):
-    total_records = (
-        db.session.query(
-            func.count().label('total_records'),
-            late_arrivals_subquery.c.late_attendance_dates
-        )
-        .select_from(Employee)
-        .join(late_arrivals_subquery, Employee.record_id == late_arrivals_subquery.c.employee_record_id, isouter=True)
-        .join(Attendance, Employee.record_id == Attendance.employee_record_id)
-        .filter(Employee.country == country)
-        .filter(func.substr(Attendance.date, 1, 4) == str(year))
-        .group_by(Employee.record_id)
-        .having(late_arrivals_subquery.c.late_attendance_dates.isnot(None))
-        .first()
-    )
-
-    if total_records:
-        total_records, late_attendance_dates = total_records
-        return total_records
-    return 0  # or any default values you prefer
-
-
 def get_late_arrivals_subquery(country, year, filtered_workdays):
+    """
+    The function `get_late_arrivals_subquery` returns a subquery that retrieves the employee record IDs
+    and the dates of late attendance for employees in a specific country and year, with certain
+    filtering conditions.
+    
+    :param country: The country parameter is used to filter the employees based on their country of
+    residence
+    :param year: The "year" parameter is the year for which you want to retrieve the late arrivals data
+    :param filtered_workdays: The parameter "filtered_workdays" is a list of dates that have been
+    filtered based on certain criteria. It is used to filter the attendance records for late arrivals
+    :return: a subquery that retrieves the employee record ID and a concatenated string of late
+    attendance dates for employees who meet certain criteria.
+    """
     late_arrivals_subquery = (
         db.session.query(
             Attendance.employee_record_id,
@@ -175,13 +129,30 @@ def get_late_arrivals_subquery(country, year, filtered_workdays):
 
 
 def get_attendance_info(country, year, filtered_workdays, workdays_and_events, weeks_in_year=52):
+    """
+    The function `get_attendance_info` retrieves attendance information for employees in a specific
+    country and year, including their total and average hours worked per week, as well as any late
+    arrival events they had.
+    
+    :param country: The country parameter is a string that represents the country for which you want to
+    retrieve attendance information
+    :param year: The year parameter is the year for which you want to retrieve attendance information
+    :param filtered_workdays: The parameter "filtered_workdays" is a list of workdays that have been
+    filtered based on certain criteria. It likely contains dates or timestamps of workdays that meet
+    specific conditions or requirements
+    :param workdays_and_events: The parameter "workdays_and_events" is a dictionary that contains
+    information about workdays and events. The keys of the dictionary are dates in the format
+    "YYYY-MM-DD" and the values are dictionaries containing information about the event on that date
+    :param weeks_in_year: The parameter "weeks_in_year" represents the number of weeks in a year. It is
+    an optional parameter with a default value of 52. This parameter is used to calculate the average
+    hours worked per week by dividing the total hours worked by the number of weeks in a year, defaults
+    to 52 (optional)
+    :return: a list of dictionaries, where each dictionary represents an employee's attendance
+    information. The dictionaries contain the following keys: "record_id", "name", "work_id_number",
+    "email_address", "country", "phone_number", "average_hours_per_week", and "events".
+    """
     late_arrivals_subquery = get_late_arrivals_subquery(
         country, year, filtered_workdays)
-    print('here')
-    # total_records = get_total_records(country, year, late_arrivals_subquery)
-    # print(total_records)
-
-
    
     results = []
 
@@ -235,104 +206,6 @@ def get_attendance_info(country, year, filtered_workdays, workdays_and_events, w
             "events": list(events.values())
         }
         results.append(data)
-    print(results)
-    # Query to get average hours per week and late attendance dates for each employee in the given year
-    
-
-    # Create a list to store the result
-
-    # for employee_data in query_result:
-    #     events = {}
-    #     late_dates = employee_data.late_attendance_dates.split(',')
-    #     for date in late_dates:
-    #         if date in workdays_and_events:
-    #             event = workdays_and_events[date]
-    #             events[event['id']] = event
-
-    #     data = {
-    #         "record_id": employee_data.record_id,
-    #         "name": employee_data.name,
-    #         "work_id_number": employee_data.work_id_number,
-    #         "email_address": employee_data.email_address,
-    #         "country": employee_data.country,
-    #         "phone_number": employee_data.phone_number,
-    #         "average_hours_per_week": employee_data.average_hours_per_week,
-    #         "events": list(events.values())
-    #     }
-    #     results.append(data)
     return results
 
-# def get_attendance_info(country, year, filtered_workdays, workdays_and_events, weeks_in_year=52):
-#     late_arrivals_subquery = (
-#         db.session.query(
-#             Attendance.employee_record_id,
-#             func.group_concat(Attendance.date).label('late_attendance_dates')
-#         )
-#         .join(Employee, Employee.record_id == Attendance.employee_record_id)
-#         .filter(Employee.country == country)
-#         .filter(func.substr(Attendance.date, 1, 4) == str(year))
-#         .filter(or_(
-#             Attendance.clock_in > '08:15:00',
-#             Attendance.clock_in == '',
-#             Attendance.clock_out < '16:00:00',
-#             Attendance.clock_out == ''
-#         ))
-#         .filter(Attendance.date.in_(filtered_workdays))
-#         .group_by(Attendance.employee_record_id)
-#         .having(func.count() > 3)  # Ensure more than 3 late attendances
-#     ).subquery()
 
-#     # Query to get average hours per week and late attendance dates for each employee in the given year
-#     query_result = (
-#         db.session.query(
-#             Employee.record_id,
-#             Employee.name,
-#             Employee.work_id_number,
-#             Employee.email_address,
-#             Employee.country,
-#             Employee.phone_number,
-#             func.sum(func.cast(
-#                 (func.unix_timestamp(func.str_to_date(Attendance.clock_out, '%H:%i:%s')) -
-#                  func.unix_timestamp(func.str_to_date(Attendance.clock_in, '%H:%i:%s'))),
-#                 db.Float
-#             ) / 3600).label('total_hours'),
-#             func.sum(func.cast(
-#                 (func.unix_timestamp(func.str_to_date(Attendance.clock_out, '%H:%i:%s')) -
-#                  func.unix_timestamp(func.str_to_date(Attendance.clock_in, '%H:%i:%s'))),
-#                 db.Float
-#             ) / 3600 / weeks_in_year).label('average_hours_per_week'),
-#             late_arrivals_subquery.c.late_attendance_dates
-#         )
-#         .join(late_arrivals_subquery, Employee.record_id == late_arrivals_subquery.c.employee_record_id, isouter=True)
-#         .join(Attendance, Employee.record_id == Attendance.employee_record_id)
-#         .filter(Employee.country == country)
-#         .filter(func.substr(Attendance.date, 1, 4) == str(year))
-#         .group_by(Employee.record_id, Employee.name, Employee.work_id_number, Employee.email_address, Employee.country, Employee.phone_number)
-#         # Filter out employees with no late arrivals
-#         .having(late_arrivals_subquery.c.late_attendance_dates.isnot(None))
-
-#     )
-
-#     # Create a list to store the result
-#     results = []
-#     for employee_data in query_result:
-#         events = {}
-#         print(employee_data)
-#         late_dates = employee_data.late_attendance_dates.split(',')
-#         for date in late_dates:
-#             if date in workdays_and_events:
-#                 event = workdays_and_events[date]
-#                 events[event['id']] = event
-
-#         data = {
-#             "record_id": employee_data.record_id,
-#             "name": employee_data.name,
-#             "work_id_number": employee_data.work_id_number,
-#             "email_address": employee_data.email_address,
-#             "country": employee_data.country,
-#             "phone_number": employee_data.phone_number,
-#             "average_hours_per_week": employee_data.average_hours_per_week,
-#             "events": list(events.values())
-#         }
-#         results.append(data)
-#     return results

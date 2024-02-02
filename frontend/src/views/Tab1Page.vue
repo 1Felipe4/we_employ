@@ -12,41 +12,38 @@
         </ion-toolbar>
       </ion-header>
       <ion-progress-bar type="indeterminate" v-if="!meta.loaded"></ion-progress-bar>
-      <ion-grid >
+      <ion-grid>
         <ion-row>
-          <ion-col>
+          <ion-col size="4">
             <ion-item>
-              <ion-input label="Year" labelPlacement="stacked" type="number" @ionChange="search()" v-model="year" :disabled="!meta.loaded" :debounce="2000"></ion-input>
+              <ion-input label="Year" labelPlacement="stacked" type="number" @ionChange="search()" v-model="year"
+                :disabled="!meta.loaded" :debounce="2000"></ion-input>
             </ion-item>
           </ion-col>
-          <ion-col>
+          <ion-col size="8">
             <ion-item>
-              <ion-select @ionChange="search()" label="Country" labelPlacement="stacked" placeholder="Make a Selection" interface="popover" :multiple="true" v-model="selected_countries" :disabled="!meta.loaded">
+              <ion-select @ionChange="search()" label="Country" labelPlacement="stacked" placeholder="Make a Selection"
+                interface="popover" :multiple="true" v-model="selected_countries" :disabled="!meta.loaded">
                 <ion-select-option v-for="(country, index) in countries" :key="index">{{ country }}</ion-select-option>
               </ion-select>
-            </ion-item>
-          </ion-col>
-          <ion-col size="12" md="6" v-if="meta.loaded">
-            <ion-item>
-              <ion-label>
-                Records
-              </ion-label>
-              <ion-chip slot="end" color="success">
+              <ion-chip slot="end" color="success"  v-if="meta.loaded">
                 {{ solutionData.length }}
               </ion-chip>
             </ion-item>
           </ion-col>
         </ion-row>
       </ion-grid>
-      <ion-grid>
+      <b-table striped hover :items="solutionData"></b-table>
+
+      <!-- <ion-grid>
         <ion-row>
-          <ion-col size="12" v-for="(item, index) in solutionData" :key="index">
+          <ion-col size="12" size-md="6" v-for="(item, index) in solutionData" :key="index">
             <ion-card>
               <ion-card-header>
                 <ion-card-title>{{ item.name }}</ion-card-title>
                 <ion-card-subtitle>{{ item.email_address }} | {{ item.phone_number }}</ion-card-subtitle>
                 <ion-note>{{ item.work_id_number }}</ion-note>
-                
+
               </ion-card-header>
               <ion-card-content>
                 <ion-list>
@@ -73,9 +70,9 @@
             </ion-card>
           </ion-col>
         </ion-row>
-      </ion-grid>
+      </ion-grid> -->
       <ion-fab slot="fixed" vertical="top" horizontal="end" edge="true" v-if="meta.loaded">
-        <ion-fab-button>
+        <ion-fab-button @click="downloadSolutionData()">
           <ion-icon :icon="downloadOutline"></ion-icon>
         </ion-fab-button>
       </ion-fab>
@@ -119,12 +116,27 @@ import { useSolutionData } from '@/composables/useSolutionData'
 import { ref } from 'vue';
 const { solutionData, meta, getSolutionData } = useSolutionData()
 const isModalOpen: any = ref(false);
+
+const downloadJsonFile = (data: any, filename: any) => {
+  const jsonContent = JSON.stringify(data, null, 2);
+  const blob = new Blob([jsonContent], { type: 'application/json' });
+  const link = document.createElement('a');
+  link.href = window.URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+}
+
 const setOpen = (isOpen: boolean) => {
   isModalOpen.value = isOpen;
 }
 const countries = ref(['Trinidad and Tobago', 'Australia', 'USA', 'Canada', 'Germany'])
-const selected_countries = ref([])
+const selected_countries: any = ref([])
 const year = ref(2023)
+
+const downloadSolutionData = () => {
+  const filename = `solutionData_${selected_countries.value.concat('_')}.json`;
+  downloadJsonFile(solutionData.value, filename);
+};
 
 const search = () => {
   getSolutionData(year.value, selected_countries.value)

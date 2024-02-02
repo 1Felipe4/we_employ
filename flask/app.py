@@ -1,7 +1,7 @@
 # app.py
 from concurrent.futures import ThreadPoolExecutor
 from flask import Flask, jsonify, request, send_from_directory
-from helpers import check_employee_attendance, filter_bad_weather_days, get_attendance_info, get_events_data, get_weather_data, get_workdays_and_events
+from helpers import filter_bad_weather_days, get_attendance_info, get_events_data, get_weather_data, get_workdays_and_events
 from models import db, Employee, Attendance
 from datetime import datetime
 from flask_cors import CORS  # Import the CORS extension
@@ -53,7 +53,6 @@ def solution():
                 workdays_around_events = set(workdays_and_events.keys())
                 bad_weather_days = filter_bad_weather_days(weather_data)
                 filtered_workdays = workdays_around_events - bad_weather_days
-                # problematic_employee_ids = check_employee_attendance(country, filtered_workdays)
                 return get_attendance_info(country, year, filtered_workdays, workdays_and_events)
 
         # Use ThreadPoolExecutor to process countries concurrently
