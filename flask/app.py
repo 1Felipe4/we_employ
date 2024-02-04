@@ -44,7 +44,7 @@ def solution():
             
         else:
             all_countries = countries.split(',')
-
+        sorted(all_countries)
         # Function to process a single country
         def process_country(country):
             with app.app_context():

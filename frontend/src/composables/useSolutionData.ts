@@ -8,9 +8,16 @@ export function useSolutionData() {
   const meta = ref({
     loaded: false
   });
+  const cancelTokenSource = ref(axios.CancelToken.source());
 
   const getSolutionData = async (year = 2023, countries = []) => {
     meta.value.loaded = false
+    if (cancelTokenSource.value) {
+      cancelTokenSource.value.cancel('Operation canceled by the user.');
+    }
+
+    // Create a new CancelToken source for the current request
+    cancelTokenSource.value = axios.CancelToken.source();
     try {
       const params: any = {
         year: year,
@@ -20,7 +27,8 @@ export function useSolutionData() {
 
       }
       const response = await axios.get(`${backendUrl}/api/solution`, {
-        params: params
+        params: params,
+        cancelToken: cancelTokenSource.value.token
       });
 
       solutionData.value = response.data;

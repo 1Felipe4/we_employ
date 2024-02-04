@@ -37,7 +37,7 @@
       <ion-accordion-group :multiple="true" :value="selected_employees">
         <ion-accordion v-for="(item, index) in solutionData" :value="item.record_id" :key="index">
           <ion-item slot="header">
-            <ion-label>{{item.name}}</ion-label>
+            <ion-label>{{ item.name }}</ion-label>
           </ion-item>
           <ion-card slot="content">
             <ion-card-content>
@@ -73,42 +73,6 @@
           </ion-card>
         </ion-accordion>
       </ion-accordion-group>
-      <!-- <ion-grid>
-        <ion-row>
-          <ion-col size="12" size-md="6" v-for="(item, index) in solutionData" :key="index">
-            <ion-card>
-              <ion-card-header>
-                <ion-card-title>{{ item.name }}</ion-card-title>
-                <ion-card-subtitle>{{ item.email_address }} | {{ item.phone_number }}</ion-card-subtitle>
-                <ion-label>{{ item.work_id_number }}</ion-label>
-
-              </ion-card-header>
-              <ion-card-content>
-                <ion-list>
-                  <ion-item>
-                    <ion-label>Country</ion-label>
-                    <ion-label slot="end">{{ item.country }}</ion-label>
-                  </ion-item>
-                  <ion-item>
-                    <ion-label>ID</ion-label>
-                    <ion-badge slot="end">#{{ item.record_id }}</ion-badge>
-                  </ion-item>
-                  <ion-item>
-                    <ion-label>Average Hours Per Week</ion-label>
-                    <ion-label slot="end">{{ item.average_hours_per_week }}</ion-label>
-                  </ion-item>
-                  <ion-item>
-                    <ion-label>Events</ion-label>
-                    <ion-label slot="end">
-                      <ion-chip v-for="event in item.events">{{ event.event_name }}</ion-chip>
-                    </ion-label>
-                  </ion-item>
-                </ion-list>
-              </ion-card-content>
-            </ion-card>
-          </ion-col>
-        </ion-row>
-      </ion-grid> -->
       <ion-fab slot="fixed" vertical="top" horizontal="end" edge="true" v-if="meta.loaded">
         <ion-fab-button @click="downloadSolutionData()">
           <ion-icon :icon="downloadOutline"></ion-icon>
@@ -125,24 +89,21 @@ import {
   IonToolbar,
   IonTitle,
   IonContent,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonSelect,
-  IonSelectOption,
-  IonInput,
   IonProgressBar,
   IonGrid,
   IonRow,
   IonCol,
+  IonItem,
+  IonInput,
+  IonSelect,
+  IonSelectOption,
+  IonAccordionGroup,
+  IonAccordion,
   IonCard,
-  IonCardHeader,
-  IonCardTitle,
-  IonCardSubtitle,
   IonCardContent,
+  IonList,
   IonChip,
   IonBadge,
-  IonNote,
   IonFab,
   IonFabButton,
   IonIcon,
@@ -172,7 +133,8 @@ const selected_countries: any = ref([])
 const year = ref(2023)
 
 const downloadSolutionData = () => {
-  const filename = `solutionData_${selected_countries.value.concat('_')}.json`;
+  const fileNames = ['solutionData'].concat(selected_countries)
+  const filename = `${fileNames.join('_')}.json`;
   downloadJsonFile(solutionData.value, filename);
 };
 
