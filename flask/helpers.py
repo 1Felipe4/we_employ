@@ -1,7 +1,11 @@
 from models import db, Employee, Attendance
 from datetime import datetime, timedelta
 import requests
-from sqlalchemy import func, or_
+from sqlalchemy import create_engine, func, or_
+import settings
+from sqlalchemy.dialects.sqlite import pysqlite
+
+engine = create_engine(settings.DB_URL)
 
 
 def get_events_data(year, country):
@@ -93,12 +97,13 @@ def filter_bad_weather_days(weather_data):
 
     return bad_weather_days
 
-def get_late_arrivals_subquery(country, year, filtered_workdays):
+
+def get_late_arrivals_subquery(country, year, filtered_workdays: set):
     """
     The function `get_late_arrivals_subquery` returns a subquery that retrieves the employee record IDs
     and the dates of late attendance for employees in a specific country and year, with certain
     filtering conditions.
-    
+
     :param country: The country parameter is used to filter the employees based on their country of
     residence
     :param year: The "year" parameter is the year for which you want to retrieve the late arrivals data
@@ -107,6 +112,7 @@ def get_late_arrivals_subquery(country, year, filtered_workdays):
     :return: a subquery that retrieves the employee record ID and a concatenated string of late
     attendance dates for employees who meet certain criteria.
     """
+    print([country, sorted(filtered_workdays)])
     late_arrivals_subquery = (
         db.session.query(
             Attendance.employee_record_id,
@@ -118,8 +124,10 @@ def get_late_arrivals_subquery(country, year, filtered_workdays):
         .filter(or_(
             Attendance.clock_in > '08:15:00',
             Attendance.clock_in == '',
+            Attendance.clock_in.is_(None),
             Attendance.clock_out < '16:00:00',
-            Attendance.clock_out == ''
+            Attendance.clock_out == '',
+            Attendance.clock_out.is_(None)
         ))
         .filter(Attendance.date.in_(filtered_workdays))
         .group_by(Attendance.employee_record_id)
@@ -128,12 +136,27 @@ def get_late_arrivals_subquery(country, year, filtered_workdays):
     return late_arrivals_subquery
 
 
-def get_attendance_info(country, year, filtered_workdays, workdays_and_events, weeks_in_year=52):
+def get_average_hours_per_week_column():
+    if isinstance(engine.dialect, pysqlite.dialect):
+        # SQLite specific implementation
+        return func.sum(func.cast(func.extract('epoch', Attendance.clock_out) -
+                                  func.extract('epoch', Attendance.clock_in), db.Float)
+                        / 3600 / 52).label('average_hours_per_week')
+    else:
+        # MariaDB/MySQL implementation
+        return func.sum(func.cast(
+            (func.unix_timestamp(func.str_to_date(Attendance.clock_out, '%H:%i:%s')) -
+             func.unix_timestamp(func.str_to_date(Attendance.clock_in, '%H:%i:%s'))),
+            db.Float
+        ) / 3600 / 52).label('average_hours_per_week')
+
+
+def get_attendance_info(country, year, filtered_workdays, workdays_and_events):
     """
     The function `get_attendance_info` retrieves attendance information for employees in a specific
     country and year, including their total and average hours worked per week, as well as any late
     arrival events they had.
-    
+
     :param country: The country parameter is a string that represents the country for which you want to
     retrieve attendance information
     :param year: The year parameter is the year for which you want to retrieve attendance information
@@ -153,9 +176,9 @@ def get_attendance_info(country, year, filtered_workdays, workdays_and_events, w
     """
     late_arrivals_subquery = get_late_arrivals_subquery(
         country, year, filtered_workdays)
-   
-    results = []
 
+    results = []
+    average_hours_per_week_column = get_average_hours_per_week_column()
     query_result = (
         db.session.query(
             Employee.record_id,
@@ -164,16 +187,7 @@ def get_attendance_info(country, year, filtered_workdays, workdays_and_events, w
             Employee.email_address,
             Employee.country,
             Employee.phone_number,
-            func.sum(func.cast(
-                (func.unix_timestamp(func.str_to_date(Attendance.clock_out, '%H:%i:%s')) -
-                 func.unix_timestamp(func.str_to_date(Attendance.clock_in, '%H:%i:%s'))),
-                db.Float
-            ) / 3600).label('total_hours'),
-            func.sum(func.cast(
-                (func.unix_timestamp(func.str_to_date(Attendance.clock_out, '%H:%i:%s')) -
-                 func.unix_timestamp(func.str_to_date(Attendance.clock_in, '%H:%i:%s'))),
-                db.Float
-            ) / 3600 / weeks_in_year).label('average_hours_per_week'),
+            average_hours_per_week_column,
             late_arrivals_subquery.c.late_attendance_dates
         )
         .join(late_arrivals_subquery, Employee.record_id == late_arrivals_subquery.c.employee_record_id, isouter=True)
@@ -207,5 +221,3 @@ def get_attendance_info(country, year, filtered_workdays, workdays_and_events, w
         }
         results.append(data)
     return results
-
-
