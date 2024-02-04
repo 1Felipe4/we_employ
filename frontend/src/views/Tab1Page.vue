@@ -43,31 +43,32 @@
             <ion-card-content>
               <ion-list>
                 <ion-item>
-                  <ion-label>Email</ion-label>
-                  <ion-label slot="end">{{ item.email_address }}</ion-label>
-                </ion-item>
-                <ion-item>
-                  <ion-label>Phone</ion-label>
-                  <ion-label slot="end">{{ item.phone_number }}</ion-label>
-                </ion-item>
-                <ion-item>
                   <ion-label>Work ID</ion-label>
-                  <ion-badge slot="end">{{ item.work_id_number }}</ion-badge>
+                  <ion-badge slot="end" >{{ item.work_id_number }}</ion-badge>
                 </ion-item>
                 <ion-item>
                   <ion-label>ID</ion-label>
                   <ion-badge slot="end">#{{ item.record_id }}</ion-badge>
                 </ion-item>
                 <ion-item>
-                  <ion-label>Average Hours Per Week</ion-label>
-                  <ion-label slot="end">{{ item.average_hours_per_week }}</ion-label>
+                  <ion-label>Email</ion-label>
+                  <ion-label slot="end" class="ion-text-end">{{ item.email_address }}</ion-label>
                 </ion-item>
                 <ion-item>
-                  <ion-label>Events</ion-label>
-                  <ion-label slot="end">
-                    <ion-chip v-for="event in item.events">{{ event.event_name }}</ion-chip>
-                  </ion-label>
+                  <ion-label>Phone</ion-label>
+                  <ion-label slot="end" class="ion-text-end">{{ item.phone_number }}</ion-label>
                 </ion-item>
+                <ion-item>
+                  <ion-label>Average Hours Per Week</ion-label>
+                  <ion-label slot="end" class="ion-text-end">{{ item.average_hours_per_week }}</ion-label>
+                </ion-item>
+                <ion-label>Events</ion-label>
+                <ion-list>
+                  <ion-item v-for="event in item.events">
+                    <ion-label>{{ event.event_name }}</ion-label>
+                    <ion-label slot="end" class="ion-text-end">{{ event.event_date }}</ion-label>
+                  </ion-item>
+                </ion-list>
               </ion-list>
             </ion-card-content>
           </ion-card>
@@ -133,7 +134,7 @@ const selected_countries: any = ref([])
 const year = ref(2023)
 
 const downloadSolutionData = () => {
-  const fileNames = ['solutionData'].concat(selected_countries)
+  const fileNames = ['solutionData'].concat(selected_countries.value)
   const filename = `${fileNames.join('_')}.json`;
   downloadJsonFile(solutionData.value, filename);
 };
